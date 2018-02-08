@@ -4,6 +4,7 @@ import cluster.model.Sources;
 import cluster.parsing.FileParser;
 import cluster.settings.ClusterType;
 import cluster.settings.Parameters;
+import cluster.solver.ProblemSolver;
 
 import java.util.Scanner;
 
@@ -17,6 +18,9 @@ public class Main {
 
         FileParser fp = new FileParser();
         Sources s = fp.parseFile();
+
+        ProblemSolver problemSolver = new ProblemSolver(s);
+        problemSolver.seedNodes();
     }
 
 //    public static void main(String[] args) throws Exception {
