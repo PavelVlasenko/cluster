@@ -6,6 +6,7 @@ import cluster.model.Sources;
 import cluster.settings.Parameters;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProblemSolver {
 
@@ -133,7 +134,8 @@ public class ProblemSolver {
     private void calculateNeighbors() {
         neighbors = new HashMap<>();
         for(Cluster cluster : clusters) {
-
+            Set<Integer> set = coupledNodes(cluster).stream().map(node -> node.getNumber()).collect(Collectors.toSet());
+            neighbors.put(cluster, set);
         }
     }
 
@@ -174,6 +176,9 @@ public class ProblemSolver {
     }
 
     private double calculateEdgesSum() {
+        for(Cluster cluster : clusters) {
+
+        }
         return 0.0;
     }
 
