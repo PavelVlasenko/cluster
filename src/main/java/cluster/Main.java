@@ -15,12 +15,14 @@ public class Main {
         System.out.println("Start program");
         Parameters.fileName = "Sparse82_10.txt";
         Parameters.clusterType = ClusterType.SPARSE_82;
+        Parameters.numberOfClusters = 8;
 
         FileParser fp = new FileParser();
         Sources s = fp.parseFile();
 
         ProblemSolver problemSolver = new ProblemSolver(s);
         problemSolver.seedNodes();
+        problemSolver.printClusters();
     }
 
 //    public static void main(String[] args) throws Exception {

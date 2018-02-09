@@ -1,6 +1,6 @@
 package cluster.model;
 
-public class Node {
+public class Node implements Comparable<Integer> {
 
     private int number;
     private int weight;
@@ -24,5 +24,11 @@ public class Node {
 
     public void setWeight(int weight) {
         this.weight = weight;
+    }
+
+    @Override
+    public int compareTo(Integer o) {
+        Integer numberWrap = weight;
+        return numberWrap.compareTo(o);
     }
 }

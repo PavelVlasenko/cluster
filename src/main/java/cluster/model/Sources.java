@@ -1,7 +1,9 @@
 package cluster.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Sources {
 
@@ -22,6 +24,37 @@ public class Sources {
 
     public List<Edge> getEdges() {
         return edges;
+    }
+
+    public Set<Integer> getNodeNumbersCoupledWithNode(Node node) {
+        Set<Integer> result = new HashSet<>();
+        List<Edge> edges = getEdgesForNode(node);
+        for(Edge edge : edges) {
+            result.add(edge.getFirstNode());
+            result.add(edge.getSecondNode());
+        }
+        return result;
+    }
+
+    public List<Edge> getEdgesForNode(Node node) {
+        int nodeNumber = node.getNumber();
+        List<Edge> result = new ArrayList<>();
+        for(Edge edge : edges) {
+            if(edge.getFirstNode() == nodeNumber || edge.getSecondNode() == nodeNumber) {
+                result.add(edge);
+            }
+        }
+        return result;
+    }
+
+    public Node getNode(int number) {
+        for(Node n : nodes) {
+            if (n.getNumber() == number) {
+                return n;
+            }
+        }
+        System.out.println("ERROR NULL");
+        return null;
     }
 
     @Override
