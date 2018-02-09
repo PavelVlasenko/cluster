@@ -18,4 +18,16 @@ public class Move {
     public double getIncrease() {
         return increase;
     }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public int getFromCluster() {
+        return fromCluster;
+    }
+
+    public int getToCluster() {
+        return toCluster;
+    }
 }

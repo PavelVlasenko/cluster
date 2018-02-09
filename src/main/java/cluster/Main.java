@@ -23,6 +23,9 @@ public class Main {
         ProblemSolver problemSolver = new ProblemSolver(s);
         problemSolver.seedNodes();
         problemSolver.printClusters();
+
+        problemSolver.improve();
+        problemSolver.printClusters();
     }
 
 //    public static void main(String[] args) throws Exception {

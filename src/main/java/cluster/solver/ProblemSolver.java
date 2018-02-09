@@ -17,6 +17,8 @@ public class ProblemSolver {
     private List<Move> candidateList = new ArrayList<>();
     private Map<Cluster, Set<Integer>> neighbors;
 
+    private List<Move> iterations = new ArrayList<>();
+
     public ProblemSolver(Sources sources) {
         this.sources = sources;
         for(int i = 0; i<Parameters.numberOfClusters; i++) {
@@ -111,14 +113,33 @@ public class ProblemSolver {
     }
 
     public void improve() {
+        calculateNeighbors();
+
         calculateCandidateList();
         candidateList.sort(new Comparator<Move>() {
             @Override
             public int compare(Move o1, Move o2) {
                 Double d1 = o1.getIncrease();
-                return o1.getIncrease();
+                return d1.compareTo(o2.getIncrease());
             }
         });
+
+        Move bestSolution = candidateList.get(0);
+        iterations.add(bestSolution);
+
+        doMove(bestSolution);
+    }
+
+    private void calculateNeighbors() {
+        neighbors = new HashMap<>();
+        for(Cluster cluster : clusters) {
+
+        }
+    }
+
+    private void doMove(Move move) {
+        clusters.get(move.getFromCluster()).getNodes().remove(move.getNode());
+        clusters.get(move.getToCluster()).addNode(move.getNode());
     }
 
     public void calculateCandidateList() {
@@ -153,7 +174,7 @@ public class ProblemSolver {
     }
 
     private double calculateEdgesSum() {
-
+        return 0.0;
     }
 
 
