@@ -8,17 +8,18 @@ import cluster.settings.Parameters;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * This class contains the main logic of problem solving.
+ * There are two parts: cluster initialization(seed nodes) and improving current solution with tabu search algorithm.
+ */
 public class ProblemSolver {
-
     private Sources sources;
     private List<Cluster> clusters = new ArrayList<>();
     private int counter = 0;
     private double currentEdgesSum = 0;
-
     private List<Move> candidateList = new ArrayList<>();
     private Map<Cluster, Set<Integer>> neighbors;
-
-    private List<Move> iterations = new ArrayList<>();
+    private List<Move> tabuIterations = new ArrayList<>();
 
     public ProblemSolver(Sources sources) {
         this.sources = sources;
@@ -28,35 +29,37 @@ public class ProblemSolver {
 
     }
 
+    /**
+     * First initialization of the clusters.
+     *
+     */
     public void seedNodes() {
-        System.out.print("Start seed nodes");
+        //Sort nodes by weight
         LinkedList<Node> nodes = new LinkedList<>(sources.getNodes());
         nodes.sort((o1, o2) -> {
             Integer i1 = o1.getWeight();
             return i1.compareTo(o2.getWeight());
         });
 
-        System.out.print("Preseed started");
+        //Insert nodes in clusters
         for(int i =0;i < clusters.size(); i++) {
             Node n = nodes.poll();
-            System.out.println("Put node " + n.getNumber() + " to cluster " + i);
             clusters.get(i).addNode(n);
         }
-        System.out.println("Preseed is finished");
 
+        //Then randomly insert neighbors to the cluster until all nodes will be inserted
         while(!nodes.isEmpty()) {
             Cluster cluster = clusters.get(counter);
-            tryToPasteNode(cluster, nodes);
+            insertNode(cluster, nodes);
         }
         System.out.println("Node seed is finished");
     }
 
-    private void tryToPasteNode(Cluster cluster, List<Node> nodes) {
+    private void insertNode(Cluster cluster, List<Node> nodes) {
         Set<Node> coupledNodes = coupledNodes(cluster);
         if(!coupledNodes.isEmpty()) {
             for(Node a : coupledNodes) {
                 if(nodes.contains(a)) {
-                    System.out.println("Paste node " + a.getNumber() + " to cluster number " + counter);
                     cluster.addNode(a);
                     nodes.remove(a);
                     break;
@@ -82,19 +85,10 @@ public class ProblemSolver {
         return result;
     }
 
-
-
-    private boolean isClusterCoupledWithNode(Cluster cluster, Node n) {
-        for(Node clusterNode : cluster.getNodes()) {
-            if(sources.getNodeNumbersCoupledWithNode(clusterNode).contains(n.getNumber())){
-                System.out.println("Node " + n.getNumber() + " coupled with cluster " + cluster.getClusterNumber());
-                return true;
-            }
-        }
-        System.out.println("Node " + n.getNumber() + " NOT coupled with cluster " + cluster.getClusterNumber());
-        return false;
-    }
-
+    /**
+     * This counter is needed for insert nodes.
+     * It works by round-robin algorithm. After node is inserted to the last cluster, counter returns to the first cluster.
+     */
     private void incrementCounter() {
         counter++;
         if(counter >= clusters.size()) {
@@ -102,35 +96,73 @@ public class ProblemSolver {
         }
     }
 
+    /**
+     * Print to console info about cluster.
+     * It contains clusters number with all nodes, node weight sum and edges distances.
+     */
     public void printClusters() {
-        StringBuffer sb = new StringBuffer("Cluster result: \r\n");
+        StringBuilder sb = new StringBuilder("=========================\r\nCluster result: \r\n");
         int totalSize = 0;
         for(Cluster cluster : clusters) {
             sb.append(cluster.toString()).append("\r\n");
             totalSize += cluster.getNodes().size();
         }
+        System.out.println("Total node size = " + totalSize);
         System.out.println(sb.toString());
-        System.out.println("Total size = " + totalSize);
+        System.out.println("Total edge sum = " + calculateEdgesSum(clusters));
     }
 
+    /**
+     * Improve current solution with tabu search algorithm.
+     * We can invoke this method several times.
+     * Number of iterations we set from console.
+     */
     public void improve() {
+        currentEdgesSum = calculateEdgesSum(clusters);
         calculateNeighbors();
 
         calculateCandidateList();
-        candidateList.sort(new Comparator<Move>() {
-            @Override
-            public int compare(Move o1, Move o2) {
-                Double d1 = o1.getIncrease();
-                return d1.compareTo(o2.getIncrease());
+        sortCandidateList();
+
+        Move bestSolution = null;
+        for(Move item : candidateList) {
+            if(!isTabuMove(item)) {
+                bestSolution = item;
+                break;
             }
-        });
-
-        Move bestSolution = candidateList.get(0);
-        iterations.add(bestSolution);
-
+        }
+        tabuIterations.add(bestSolution);
         doMove(bestSolution);
     }
 
+    /**
+     * Checks that move is already in tabu list.
+     * Returns true if move in tabu, false otherwise.
+     */
+    private boolean isTabuMove(Move move) {
+        for(Move tabuMove : tabuIterations) {
+            if(tabuMove.getNode().getNumber() == move.getNode().getNumber()
+                    && tabuMove.getToCluster() == move.getToCluster()
+                    && tabuMove.getFromCluster() == move.getFromCluster()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Sorts candidate list from higher increase to the lower.
+     */
+    private void sortCandidateList() {
+        candidateList.sort((o1, o2) -> {
+            Double d2 = o2.getIncrease();
+            return d2.compareTo(o1.getIncrease());
+        });
+    }
+
+    /**
+     * Calculates all neighbors for cluster
+     */
     private void calculateNeighbors() {
         neighbors = new HashMap<>();
         for(Cluster cluster : clusters) {
@@ -139,16 +171,27 @@ public class ProblemSolver {
         }
     }
 
+
+    /**
+     * Realize node moving from one cluster to another
+     */
     private void doMove(Move move) {
+        System.out.println("Move node " + move.getNode().getNumber() + " from cluster " + move.getFromCluster() +
+        " to cluster " + move.getToCluster() + "\r\nIncrease = " + move.getIncrease());
         clusters.get(move.getFromCluster()).getNodes().remove(move.getNode());
         clusters.get(move.getToCluster()).addNode(move.getNode());
+
     }
 
+    /**
+     * Calculates all candidates for next iteration.
+     * Then we need to choose the best from it
+     */
     public void calculateCandidateList() {
         for(Cluster cluster : clusters) {
             for(Node node : cluster.getNodes()) {
                 for(Map.Entry<Cluster, Set<Integer>> entry : neighbors.entrySet()) {
-                    if(!cluster.equals(entry.getKey()) || entry.getValue().contains(node.getNumber())) {
+                    if(!cluster.equals(entry.getKey()) && entry.getValue().contains(node.getNumber())) {
                         Move move = calculateMove(node, cluster, entry.getKey());
                         candidateList.add(move);
                     }
@@ -157,30 +200,69 @@ public class ProblemSolver {
         }
     }
 
+    /**
+     * Calculates increase for node moving
+     */
     private Move calculateMove(Node node, Cluster fromCluster, Cluster toCluster) {
-        List<Cluster> clusters = copyCluster(this.clusters);
-        clusters.get(fromCluster.getClusterNumber()).getNodes().remove(node);
-        clusters.get(toCluster.getClusterNumber()).addNode(node);
-        double edgesSum = calculateEdgesSum();
+        List<Cluster> clustersCopy = copyCluster(this.clusters);
+        if(!clustersCopy.get(fromCluster.getClusterNumber()).getNodes().remove(node)) {
+            System.out.println("");
+        }
+        clustersCopy.get(toCluster.getClusterNumber()).addNode(node);
+
+        int nodeWeight = clustersCopy.get(toCluster.getClusterNumber()).getNodesWeight();
+
+        //If node weight sum out of range, create item with negative infinity increase
+        if(nodeWeight > Parameters.clusterMaxLimit || nodeWeight < Parameters.clusterMinLimit) {
+            return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), -99999999.9);
+        }
+        double edgesSum = calculateEdgesSum(clustersCopy);
         double increase = edgesSum - currentEdgesSum;
 
-        return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), currentEdgesSum);
+        return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), increase);
     }
 
+    /**
+     * Copy cluster. It's needed for calculating iteration without affect in current cluster
+     */
     private List<Cluster> copyCluster(List<Cluster> clusters) {
-        List<Cluster> clustersCopy = new ArrayList<>(clusters);
-        for(int i = 0; i<clusters.size(); i++) {
-            clustersCopy.get(i).setNodes(new ArrayList<>(clusters.get(i).getNodes()));
-        }
-        return clustersCopy;
-    }
-
-    private double calculateEdgesSum() {
+        List<Cluster> newClusters = new ArrayList<>();
         for(Cluster cluster : clusters) {
-
+            Cluster newCluster = new Cluster(cluster.getSources(), cluster.getClusterNumber());
+            for (Node node : cluster.getNodes()) {
+                Node newNode = new Node(node.getNumber(), node.getWeight());
+                newCluster.addNode(newNode);
+            }
+            newClusters.add(newCluster);
         }
-        return 0.0;
+        return newClusters;
     }
+
+    /**
+     * Calculates edge sum
+     */
+    private double calculateEdgesSum(List<Cluster> clusters) {
+        double edgeSum = 0;
+        for(Cluster cluster : clusters) {
+            List<Edge> edges = getClusterEdges(cluster);
+            for(Edge edge : edges) {
+                edgeSum += edge.getDistance();
+            }
+        }
+        return edgeSum;
+    }
+
+    private List<Edge> getClusterEdges(Cluster cluster) {
+        List<Integer> nodes = cluster.getNodes().stream().map(node -> node.getNumber()).collect(Collectors.toList());
+        List<Edge> result = new ArrayList<>();
+        for(Edge edge : sources.getEdges()) {
+            if(nodes.contains(edge.getFirstNode()) && nodes.contains(edge.getSecondNode())) {
+                result.add(edge);
+            }
+        }
+        return result;
+    }
+
 
 
 }

@@ -17,8 +17,8 @@ public class Cluster {
         this.clusterNumber = clusterNumber;
     }
 
-    private int getClusterWeight() {
-        return 0;
+    public Sources getSources() {
+        return sources;
     }
 
     public void addNode(Node node) {
@@ -38,12 +38,41 @@ public class Cluster {
         this.nodes = nodes;
     }
 
+
+    /**
+     * Return all nodes weight sum
+     */
+    public int getNodesWeight() {
+        int weightSum = 0;
+        for(Node node : nodes) {
+            weightSum += node.getWeight();
+        }
+        return weightSum;
+    }
+
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("Cluster nodes=");
+        StringBuffer sb = new StringBuffer("Cluster " + clusterNumber + " = ");
         for(Node node : nodes) {
             sb.append(node.getNumber()).append(",");
         }
+        sb.append(" Node weight sum = ").append(getNodesWeight());
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Cluster cluster = (Cluster) o;
+
+        return clusterNumber == cluster.clusterNumber;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return clusterNumber;
     }
 }

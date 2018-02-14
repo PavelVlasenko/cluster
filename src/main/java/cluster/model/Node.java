@@ -31,4 +31,28 @@ public class Node implements Comparable<Integer> {
         Integer numberWrap = weight;
         return numberWrap.compareTo(o);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        return number == node.number;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return number;
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "number=" + number +
+                ", weight=" + weight +
+                '}';
+    }
 }

@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * This class contains all nodes and edges
+ */
 public class Sources {
 
     private List<Node> nodes = new ArrayList<>();
@@ -53,7 +56,7 @@ public class Sources {
                 return n;
             }
         }
-        System.out.println("ERROR NULL");
+        System.out.println("ERROR while getting node by number, node " + number + " not found");
         return null;
     }
 

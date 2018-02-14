@@ -6,7 +6,6 @@ import cluster.model.Sources;
 import cluster.settings.Parameters;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Enumeration;
@@ -14,12 +13,16 @@ import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+/**
+ * Parses file and provide all info about nodes and edges
+ */
 public class FileParser {
 
-    private boolean flag = false;
+    private ParsingStatus status = ParsingStatus.INIT;
     private int nodeCounter = 0;
 
     public Sources parseFile() {
+        System.out.println("Start parsing file");
         Sources sources = new Sources();
 
         ClassLoader classLoader = getClass().getClassLoader();
@@ -42,21 +45,21 @@ public class FileParser {
 
             String firstLine = it.next();
             String[] firstLineElements = firstLine.split(" ");
+            Parameters.numberOfClusters = Integer.parseInt(firstLineElements[1]);
             for (String element : firstLineElements) {
-                if(flag) {
+                if (status == ParsingStatus.NODE) {
                     Node node = new Node(nodeCounter, Integer.parseInt(element));
                     sources.addNode(node);
                     nodeCounter++;
-                }
-                else if(element.equals("W")) {
-                    flag = true;
+                } else if (element.equals("W")) {
+                    status = ParsingStatus.NODE;
                 }
             }
 
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 String[] edgeElements = it.next().split(" ");
                 double distance = Double.parseDouble(edgeElements[2]);
-                if(distance != 0.0) {
+                if (distance != 0.0) {
                     Edge edge = new Edge(Integer.parseInt(edgeElements[0]),
                             Integer.parseInt(edgeElements[1]),
                             distance);
