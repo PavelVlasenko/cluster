@@ -34,17 +34,25 @@ public class ProblemSolver {
      *
      */
     public void seedNodes() {
-        //Sort nodes by weight
         LinkedList<Node> nodes = new LinkedList<>(sources.getNodes());
-        nodes.sort((o1, o2) -> {
-            Integer i1 = o1.getWeight();
-            return i1.compareTo(o2.getWeight());
-        });
 
+        LinkedList<Edge> edges = new LinkedList<>(sources.getEdges());
+        edges.sort((o1, o2) -> ((Double)o2.getDistance()).compareTo(o1.getDistance()));
         //Insert nodes in clusters
-        for(int i =0;i < clusters.size(); i++) {
-            Node n = nodes.poll();
-            clusters.get(i).addNode(n);
+        for(int i = 0; i < clusters.size(); i++) {
+            boolean inserted = false;
+            while(!inserted && !edges.isEmpty()) {
+                Edge edge = edges.poll();
+                Node n1 = sources.getNodes().get(edge.getFirstNode());
+                Node n2 = sources.getNodes().get(edge.getSecondNode());
+                if(nodes.contains(n1) && nodes.contains(n2)) {
+                    clusters.get(i).addNode(n1);
+                    clusters.get(i).addNode(n2);
+                    nodes.remove(n1);
+                    nodes.remove(n2);
+                    inserted = true;
+                }
+            }
         }
 
         //Then randomly insert neighbors to the cluster until all nodes will be inserted
