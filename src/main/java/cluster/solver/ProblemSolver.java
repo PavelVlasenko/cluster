@@ -66,12 +66,17 @@ public class ProblemSolver {
     private void insertNode(Cluster cluster, List<Node> nodes) {
         Set<Node> coupledNodes = coupledNodes(cluster);
         if(!coupledNodes.isEmpty()) {
+            List<Node> availableNodes = new ArrayList<>();
             for(Node a : coupledNodes) {
                 if(nodes.contains(a)) {
-                    cluster.addNode(a);
-                    nodes.remove(a);
-                    break;
+                    availableNodes.add(a);
                 }
+            }
+            if(!availableNodes.isEmpty()) {
+                int nodeNum = (new Random()).nextInt(availableNodes.size());
+                Node node = availableNodes.get(nodeNum);
+                cluster.addNode(node);
+                nodes.remove(node);
             }
         }
         incrementCounter();
@@ -134,10 +139,14 @@ public class ProblemSolver {
 
         Move bestSolution = null;
         for(Move item : candidateList) {
-            if(!isTabuMove(item)) {
+            if(!isTabuMove(item) && item.getIncrease() != Double.NEGATIVE_INFINITY) {
                 bestSolution = item;
                 break;
             }
+        }
+        if(bestSolution == null) {
+            System.out.println("The best solution is achieved. Finish program");
+            System.exit(0);
         }
         tabuIterations.add(bestSolution);
         doMove(bestSolution);
@@ -196,6 +205,7 @@ public class ProblemSolver {
      * Then we need to choose the best from it
      */
     public void calculateCandidateList() {
+        candidateList = new ArrayList<>();
         for(Cluster cluster : clusters) {
             for(Node node : cluster.getNodes()) {
                 for(Map.Entry<Cluster, Set<Integer>> entry : neighbors.entrySet()) {
@@ -218,16 +228,21 @@ public class ProblemSolver {
         }
         clustersCopy.get(toCluster.getClusterNumber()).addNode(node);
 
-        int nodeWeight = clustersCopy.get(toCluster.getClusterNumber()).getNodesWeight();
+        int nodeWeightToCluster = clustersCopy.get(toCluster.getClusterNumber()).getNodesWeight();
+        int nodeWeightFromCluster = clustersCopy.get(fromCluster.getClusterNumber()).getNodesWeight();
 
         //If node weight sum out of range, create item with negative infinity increase
-        if(nodeWeight > Parameters.clusterMaxLimit || nodeWeight < Parameters.clusterMinLimit) {
-            return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), -99999999.9);
+        if(checkNodeSum(nodeWeightFromCluster) || checkNodeSum(nodeWeightToCluster)) {
+            return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), Double.NEGATIVE_INFINITY);
         }
         double edgesSum = calculateEdgesSum(clustersCopy);
         double increase = edgesSum - currentEdgesSum;
 
         return new Move(node, fromCluster.getClusterNumber(), toCluster.getClusterNumber(), increase);
+    }
+
+    private boolean checkNodeSum(int nodeWeight) {
+        return nodeWeight > Parameters.clusterMaxLimit || nodeWeight < Parameters.clusterMinLimit;
     }
 
     /**
